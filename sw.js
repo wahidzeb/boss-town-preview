@@ -1,18 +1,7 @@
-/* Boss Town Tycoon (preview) service worker, scope /boss-town-preview/ only (keeps the hub's "/" worker off this game).
-   Network-first for the game page (fresh builds win online, cached copy offline); cache-first for own icons. */
-const C = "boss-town-preview-v26";
-self.addEventListener("install", (e) => { e.waitUntil(Promise.race([new Promise((ok) => setTimeout(ok, 10000)), caches.open(C).then((c) => c.addAll(["./", "manifest.webmanifest", "icons/icon-192.png"])).catch(() => {})]).then(() => self.skipWaiting())); });
-self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith("boss-town-preview-") && k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener("fetch", (e) => {
-  const r = e.request, u = new URL(r.url);
-  if (r.method !== "GET" || u.origin !== location.origin || !u.pathname.startsWith("/boss-town-preview/")) return;
-  if (r.mode === "navigate") {
-    // network-first with a 3s timeout: a stalled network shows the cached game instead of hanging on the splash
-    const net = fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put("./", cp)).catch(() => {}); } return res; });
-    const late = (ms) => new Promise((ok) => setTimeout(ok, ms));
-    e.respondWith(Promise.race([net, late(3000).then(() => caches.match("./").then((h) => h || net))])
-      .catch(() => caches.match("./").then((h) => h || Response.error())));
-  } else if (u.pathname.startsWith("/boss-town-preview/icons/") || u.pathname === "/boss-town-preview/manifest.webmanifest") {
-    e.respondWith(caches.match(r).then((h) => h || fetch(r)));
-  }
+/* Boss Town preview moved to /boss-town/. This worker clears the old offline copy and removes itself. */
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => {
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => /^boss-town-preview-v\d+$/.test(k)).map((k) => caches.delete(k))))
+    .then(() => self.registration.unregister()).then(() => self.clients.matchAll({ type: "window" }))
+    .then((cs) => cs.forEach((c) => { try { c.navigate("/boss-town/"); } catch (x) {} })).catch(() => {}));
 });
