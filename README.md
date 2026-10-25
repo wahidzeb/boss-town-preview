@@ -1,2 +1,3 @@
-# boss-town-preview (retired)
-The preview is finished. This address now sends players to https://zaibgames.com/boss-town/
+# Boss Town Tycoon - private preview
+
+Dream Worlds era preview (v26). Hidden from search, not linked from the hub. Live game: wahidzeb/boss-town (v25).
